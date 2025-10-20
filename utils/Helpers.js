@@ -24,22 +24,22 @@ const validateProductData = (data, isUpdate = false) => {
 
   // 🔹 Only check required fields if this is a creation (not a partial update)
   if (!isUpdate) {
-    if (!name || !description || !price || !images || !category || !brand) {
+    if (!name || !description || !price || !category || !brand) {
       throw new Error("All fields are required!");
     }
   }
 
-  // 🔹 Validate image array structure if provided
-  if (images) {
-    if (!Array.isArray(images) || images.length < 3 || images.length > 6) {
-      throw new Error("Product must have 3–6 images.");
-    }
+  // // 🔹 Validate image array structure if provided
+  // if (images) {
+  //   if (!Array.isArray(images) || images.length < 3 || images.length > 6) {
+  //     throw new Error("Product must have 3–6 images.");
+  //   }
 
-    const invalidImage = images.some((img) => !img.public_id || !img.url);
-    if (invalidImage) {
-      throw new Error("Each image must include 'public_id' and 'url'.");
-    }
-  }
+  //   const invalidImage = images.some((img) => !img.public_id || !img.url);
+  //   if (invalidImage) {
+  //     throw new Error("Each image must include 'public_id' and 'url'.");
+  //   }
+  // }
 
   // 🔹 Price and discount validation
   if (price !== undefined && price <= 0) {

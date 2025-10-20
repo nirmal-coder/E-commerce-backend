@@ -81,9 +81,9 @@ const productSchema = new mongoose.Schema(
       required: [true, "Images are required"],
       validate: {
         validator: function (v) {
-          return Array.isArray(v) && v.length >= 3 && v.length <= 6;
+          return Array.isArray(v) && v.length >= 3 && v.length <= 5;
         },
-        message: "A product must have between 3 and 6 images.",
+        message: "A product must have between 3 and 5 images.",
       },
     },
 

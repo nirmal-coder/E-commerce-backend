@@ -9,10 +9,10 @@ const {
 const router = express.Router();
 
 // Add to cart
-router.post("/api/cart", userAuth, addTocart);
+router.post("/cart", userAuth, addTocart);
 // Get all cart Data
-router.get("/api/cart", userAuth, getCartData);
+router.get("/cart", userAuth, getCartData);
 // delete Item from Cart
-router.delete("/api/cart/:productId", userAuth, deleteFromCart);
+router.delete("/cart/:productId", userAuth, deleteFromCart);
 
 module.exports = router;

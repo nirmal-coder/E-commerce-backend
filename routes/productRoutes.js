@@ -7,12 +7,42 @@ const {
   getProductById,
   updateProduct,
 } = require("../controllers/product");
+const upload = require("../middleware/multer");
 
 const router = express.Router();
 
-router.post("/api/admin/products", userAuth, isAdmin, addProduct);
-router.get("/api/products", getAllProduct);
-router.get("/api/products/:id", getProductById);
-router.patch("/api/products/:id", userAuth, isAdmin, updateProduct);
+const fields = [
+  {
+    name: "image1",
+    maxCount: 1,
+  },
+  {
+    name: "image2",
+    maxCount: 1,
+  },
+  {
+    name: "image3",
+    maxCount: 1,
+  },
+  {
+    name: "image4",
+    maxCount: 1,
+  },
+  {
+    name: "image5",
+    maxCount: 1,
+  },
+];
+
+router.post(
+  "/admin/products",
+  userAuth,
+  isAdmin,
+  upload.fields([...fields]),
+  addProduct
+);
+router.get("/products", getAllProduct);
+router.get("/products/:id", getProductById);
+router.patch("/products/:id", userAuth, isAdmin, updateProduct);
 
 module.exports = router;

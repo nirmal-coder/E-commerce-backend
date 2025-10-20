@@ -1,15 +1,20 @@
 const express = require("express");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
-const connectDb = require("./config/mongodb");
 require("dotenv").config();
+const connectDb = require("./config/mongodb");
+const connectCloudinary = require("./config/cloudinary");
 const authRoute = require("./routes/auth");
 const userRoute = require("./routes/userRoute");
 const productRoute = require("./routes/productRoutes");
-const cartRouter = require("./routes/cartRoutes");
+const cartRoute = require("./routes/cartRoutes");
+const orderRoute = require("./routes/orderRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
+
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// -----------MIDDLEWARES---------------
 
 app.use(
   cors({
@@ -28,17 +33,23 @@ app.use(
 
 app.use(cookieParser());
 app.use(express.json());
-app.use(authRoute);
-app.use(userRoute);
-app.use(productRoute);
-app.use(cartRouter);
 
+// ---------------ROUTES---------------
+app.use("/api", authRoute);
+app.use("/api", userRoute);
+app.use("/api", productRoute);
+app.use("/api", cartRoute);
+app.use("/api", orderRoute);
+
+// handle not found routes
 app.use(notFound);
 
-// 🔥 Handle thrown errors
+// Handle thrown errors
 
 app.use(errorHandler);
+
 connectDb().then(() => {
+  connectCloudinary();
   app.listen(PORT, () =>
     console.log("server is running on the port : " + PORT)
   );

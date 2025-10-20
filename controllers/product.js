@@ -1,6 +1,7 @@
 const { default: mongoose } = require("mongoose");
 const Product = require("../model/product");
 const { validateProductData } = require("../utils/Helpers");
+const cloudinary = require("cloudinary").v2;
 
 const selectedFeilds =
   "name price discountPrice images category brand stock isFeatured averageRating totalReviews";
@@ -10,7 +11,6 @@ const addProduct = async (req, res) => {
     const {
       name,
       description,
-      images,
       category,
       price,
       discountPrice,
@@ -28,10 +28,33 @@ const addProduct = async (req, res) => {
 
     const productStock = stock < 0 || !stock ? 0 : stock;
 
+    const image1 = req.files.image1 && req.files.image1[0];
+    const image2 = req.files.image2 && req.files.image2[0];
+    const image3 = req.files.image3 && req.files.image3[0];
+    const image4 = req.files.image4 && req.files.image4[0];
+    const image5 = req.files.image5 && req.files.image5[0];
+
+    const images = [image1, image2, image3, image4, image5].filter(
+      (each) => each !== undefined
+    );
+    console.log(images);
+
+    const imagesUrl = await Promise.all(
+      images.map(async (items) => {
+        let result = await cloudinary.uploader.upload(items.path, {
+          resource_type: "image",
+        });
+        return {
+          public_id: result.public_id,
+          url: result.secure_url,
+        };
+      })
+    );
+
     const newproduct = new Product({
       name,
       description,
-      images,
+      images: imagesUrl,
       category,
       price,
       brand,
