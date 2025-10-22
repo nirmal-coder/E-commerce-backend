@@ -12,11 +12,12 @@ const addProduct = async (req, res) => {
       name,
       description,
       category,
+      subCategory,
       price,
       discountPrice,
       stock,
       brand,
-      isFeatured,
+      bestSeller,
     } = req.body;
     const productData = req.body;
     validateProductData(productData);
@@ -56,10 +57,11 @@ const addProduct = async (req, res) => {
       description,
       images: imagesUrl,
       category,
+      subCategory,
       price,
       brand,
       discountPrice: discountPrice ?? 0,
-      isFeatured: isFeatured || false,
+      bestSeller: bestSeller || false,
       stock: productStock,
     });
 

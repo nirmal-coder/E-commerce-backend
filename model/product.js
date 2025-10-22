@@ -22,6 +22,39 @@ const ratingSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+const subCategoryEnum = [
+  "mens-clothing",
+  "womens-clothing",
+  "footwear",
+  "accessories",
+  "watches",
+  "mobiles-tablets",
+  "laptops-computers",
+  "audio-devices",
+  "cameras-accessories",
+  "gaming",
+  "kitchen-appliances",
+  "home-decor",
+  "furniture",
+  "lighting",
+  "cleaning-essentials",
+  "skincare",
+  "haircare",
+  "makeup",
+  "fragrance",
+  "grooming-tools",
+  "fitness-equipment",
+  "sportswear",
+  "outdoor-gear",
+  "nutrition-supplements",
+  "yoga-meditation",
+  "educational-toys",
+  "action-figures",
+  "board-games",
+  "school-supplies",
+  "outdoor-toys",
+];
+
 const productSchema = new mongoose.Schema(
   {
     name: {
@@ -60,7 +93,6 @@ const productSchema = new mongoose.Schema(
       type: Number,
       default: 0,
       min: [0, "Stock cannot be negative"],
-      required: [true, "stock is required"],
     },
 
     images: {
@@ -90,14 +122,21 @@ const productSchema = new mongoose.Schema(
     category: {
       type: String,
       required: true,
+      enum: [
+        "fashion-apparel",
+        "electronics",
+        "home-kitchen",
+        "beauty-personal-care",
+        "sports-fitness",
+        "kids-toys",
+      ],
       index: true, // faster category filters
     },
 
-    brand: {
+    subCategory: {
       type: String,
-      trim: true,
-      default: "Generic",
       required: true,
+      enum: subCategoryEnum,
     },
     ratings: [ratingSchema],
 
@@ -113,7 +152,7 @@ const productSchema = new mongoose.Schema(
       default: 0,
     },
 
-    isFeatured: {
+    bestSeller: {
       type: Boolean,
       default: false,
     },
@@ -128,7 +167,7 @@ const productSchema = new mongoose.Schema(
 
 async function reCalcAvergeRating(doc) {
   if (!doc) return;
-  if (doc.rating.length > 0) {
+  if (doc.ratings.length > 0) {
     const totalRatings = doc.ratings.length;
     const sumRatings = doc.ratings.reduce((sum, r) => sum + r.rating, 0);
     doc.averageRating = sumRatings / totalRatings;
