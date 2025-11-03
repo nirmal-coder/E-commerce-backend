@@ -6,6 +6,7 @@ const {
   getAllProduct,
   getProductById,
   updateProduct,
+  deleteProduct,
 } = require("../controllers/product");
 const upload = require("../middleware/multer");
 
@@ -43,6 +44,13 @@ router.post(
 );
 router.get("/products", getAllProduct);
 router.get("/products/:id", getProductById);
-router.patch("/products/:id", userAuth, isAdmin, updateProduct);
+router.put(
+  "/products/:id",
+  userAuth,
+  isAdmin,
+  upload.fields([{ name: "newImages", maxCount: 5 }]),
+  updateProduct
+);
+router.delete("/products/delete/:id", userAuth, isAdmin, deleteProduct);
 
 module.exports = router;

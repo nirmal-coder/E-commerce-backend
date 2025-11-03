@@ -17,21 +17,27 @@ const createError = (message, code) => {
 
 // utils/validateProduct.js
 const validateProductData = (data, isUpdate = false) => {
-  const {
-    name,
-    description,
-    category,
-    price,
-    discountPrice,
-    stock,
-    subCategory,
-  } = data;
+  const { name, category, price, discountPrice, stock, subCategory } = data;
+
+  const description = JSON.parse(data.description);
 
   // 🔹 Only check required fields if this is a creation (not a partial update)
   if (!isUpdate) {
     if (!name || !description || !price || !category || !subCategory) {
       throw new Error("All fields are required!");
     }
+  }
+
+  if (
+    !description ||
+    typeof description !== "object" ||
+    !description.shortDescription?.trim() ||
+    !description.longDescription?.trim()
+  ) {
+    throw createError(
+      "Both shortDescription and longDescription are required in description!",
+      400
+    );
   }
 
   const validCategory = [
@@ -120,11 +126,7 @@ const validateProductData = (data, isUpdate = false) => {
     throw new Error("Price must be greater than 0.");
   }
 
-  if (
-    discountPrice !== undefined &&
-    price !== undefined &&
-    discountPrice > price
-  ) {
+  if (Number(discountPrice) > Number(price)) {
     throw new Error("Discount price must be less than actual price!");
   }
 

@@ -2,15 +2,15 @@ const { default: mongoose } = require("mongoose");
 const Product = require("../model/product");
 const { validateProductData } = require("../utils/Helpers");
 const cloudinary = require("cloudinary").v2;
+const Orders = require("../model/order");
 
 const selectedFeilds =
-  "name price discountPrice images category brand stock isFeatured averageRating totalReviews";
+  "name price description subCategory discountPrice images category brand stock bestSeller averageRating totalReviews";
 
 const addProduct = async (req, res) => {
   try {
     const {
       name,
-      description,
       category,
       subCategory,
       price,
@@ -19,7 +19,10 @@ const addProduct = async (req, res) => {
       brand,
       bestSeller,
     } = req.body;
+
+    console.log("discountPrice", discountPrice);
     const productData = req.body;
+    const description = JSON.parse(req.body.description);
     validateProductData(productData);
     const existing = await Product.findOne({ name });
     if (existing)
@@ -52,6 +55,10 @@ const addProduct = async (req, res) => {
       })
     );
 
+    if (req.body.discountPrice === "" || req.body.discountPrice === "null") {
+      req.body.discountPrice = 0;
+    }
+
     const newproduct = new Product({
       name,
       description,
@@ -60,7 +67,7 @@ const addProduct = async (req, res) => {
       subCategory,
       price,
       brand,
-      discountPrice: discountPrice ?? 0,
+      discountPrice,
       bestSeller: bestSeller || false,
       stock: productStock,
     });
@@ -92,15 +99,22 @@ const getAllProduct = async (req, res) => {
 
     const filters = {};
 
-    if (req.query.category) filters.category = req.query.category;
-    if (req.query.brand) filters.brand = req.query.brand;
-    if (req.query.isFeatured !== undefined)
+    if (req.query.bestSeller !== undefined)
       filters.isFeatured = req.query.isFeatured === "true";
     if (req.query.minPrice)
       filters.price = { $gte: Number(req.query.minPrice) };
     if (req.query.maxPrice) {
       filters.price = filters.price || {};
       filters.price.$lte = Number(req.query.maxPrice);
+    }
+    if (req.query.category) {
+      const categories = req.query.category.split(",");
+      filters.category = { $in: categories };
+    }
+
+    if (req.query.subCategory) {
+      const subCategories = req.query.subCategory.split(",");
+      filters.subCategory = { $in: subCategories };
     }
 
     const sortBy = req.query.sortBy || "createdAt";
@@ -177,10 +191,57 @@ const updateProduct = async (req, res) => {
     // 🔹 Validate incoming data before updating
     validateProductData(req.body, true);
 
-    const updatedProduct = await Product.findByIdAndUpdate(id, req.body, {
-      new: true,
-      runValidators: true,
-    });
+    const description = JSON.parse(req.body.description);
+
+    const existingImages = req.body.existingImages
+      ? JSON.parse(req.body.existingImages)
+      : [];
+
+    const oldImagesPublicIds = req.body.oldImagesPublicIds
+      ? JSON.parse(req.body.oldImagesPublicIds)
+      : [];
+
+    const newFiles = req.files?.newImages || [];
+
+    for (const id of oldImagesPublicIds) {
+      if (id) {
+        await cloudinary.uploader.destroy(id);
+      }
+    }
+
+    const newImageLinks = [];
+    for (const file of newFiles) {
+      const uploaded = await cloudinary.uploader.upload(file.path, {
+        resource_type: "image",
+      });
+
+      newImageLinks.push({
+        public_id: uploaded.public_id,
+        url: uploaded.secure_url,
+      });
+    }
+
+    if (
+      req.body.discountPrice === "" ||
+      req.body.discountPrice === "null" ||
+      req.body.discountPrice === null ||
+      req.body.discountPrice === undefined
+    ) {
+      req.body.discountPrice = 0;
+    } else {
+      req.body.discountPrice = Number(req.body.discountPrice);
+    }
+
+    const finalImages = [...existingImages, ...newImageLinks];
+
+    const updatedProduct = await Product.findByIdAndUpdate(
+      id,
+      { ...req.body, images: finalImages, description },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
 
     if (!updatedProduct) {
       return res.status(404).json({
@@ -195,6 +256,7 @@ const updateProduct = async (req, res) => {
       data: updatedProduct,
     });
   } catch (error) {
+    console.log(error);
     res.status(400).json({
       success: false,
       message: error.message || "Something went wrong!",
@@ -207,6 +269,8 @@ const deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
 
+    console.log(id);
+
     // Check if product exists
     const product = await Product.findById(id);
     if (!product) {
@@ -217,7 +281,7 @@ const deleteProduct = async (req, res) => {
     }
 
     // Optional: Check if product is linked to any active orders
-    const activeOrder = await Order.findOne({
+    const activeOrder = await Orders.findOne({
       "items.productId": id,
       orderStatus: { $in: ["pending", "shipped"] },
     });
@@ -229,8 +293,20 @@ const deleteProduct = async (req, res) => {
       });
     }
 
+    if (product.images?.length > 0) {
+      try {
+        const deletePromises = product.images.map((img) =>
+          cloudinary.uploader.destroy(img.public_id)
+        );
+        await Promise.all(deletePromises);
+        console.log(`🧹 Cloudinary images deleted for product ${id}`);
+      } catch (cloudErr) {
+        console.error("Cloudinary deletion error:", cloudErr);
+      }
+    }
+
     // Delete product
-    await product.deleteOne();
+    await Product.findByIdAndDelete(id);
 
     return res.status(200).json({
       success: true,

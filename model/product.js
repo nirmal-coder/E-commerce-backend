@@ -66,10 +66,18 @@ const productSchema = new mongoose.Schema(
     },
 
     description: {
-      type: String,
-      required: true,
-      maxlength: 2000,
-      trim: true,
+      shortDescription: {
+        type: String,
+        required: true,
+        maxlength: 200,
+        trim: true,
+      },
+      longDescription: {
+        type: String,
+        required: true,
+        maxlength: 2000,
+        trim: true,
+      },
     },
 
     price: {
@@ -81,12 +89,6 @@ const productSchema = new mongoose.Schema(
     discountPrice: {
       type: Number,
       default: 0,
-      validate: {
-        validator: function (v) {
-          return v <= this.price;
-        },
-        message: "Discount price cannot exceed original price",
-      },
     },
 
     stock: {
